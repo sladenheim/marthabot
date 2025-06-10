@@ -46,7 +46,7 @@ def train(args, model, rank, world_size, train_loader, optimizer, epoch, sampler
         for key in batch.keys():
             batch[key] = batch[key].to(local_rank)
         optimizer.zero_grad()
-        output = model(input_ids=batch["source_ids"],attention_mask=batch["source_mask"],labels=batch["target_ids"] )
+        output = model(input_ids=batch["input_ids"],attention_mask=batch["attention_mask"],labels=batch["labels"] )
         loss = output["loss"]
         loss.backward()
         optimizer.step()
@@ -80,7 +80,7 @@ def validation(model, rank, world_size, val_loader):
         for batch in val_loader:
             for key in batch.keys():
                 batch[key] = batch[key].to(local_rank)
-            output = model(input_ids=batch["source_ids"],attention_mask=batch["source_mask"],labels=batch["target_ids"])
+            output = model(input_ids=batch["input_ids"],attention_mask=batch["attention_mask"],labels=batch["labels"])
             fsdp_loss[0] += output["loss"].item()  # sum up batch loss
             fsdp_loss[1] += len(batch)
 
@@ -102,11 +102,9 @@ def setup_model(model_name):
     Assumes model is decoder-only (e.g. LLaMA, GPT-2, Mistral).
     Automatically sets pad_token if needed.
     """
-
-    #TODO: SET CACHE DIR TO AVOID OVERFILLING HOME DIRECTORY
     
-    
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    cache_dir = os.path.join(os.environ.get("TMPDIR"), "martha_cache")    
+    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
 
     # Ensure pad_token exists (required for LLaMA-style models)
     if tokenizer.pad_token is None:
@@ -114,6 +112,7 @@ def setup_model(model_name):
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
+        cache_dir=cache_dir,
         torch_dtype=torch.bfloat16  # or torch.float16 if you're using mixed precision
     )
 

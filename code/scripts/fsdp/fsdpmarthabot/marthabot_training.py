@@ -49,6 +49,8 @@ from datetime import datetime
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 from transformers import DataCollatorForLanguageModeling
+from packaging.version import Version, parse
+from policies import bfSixteen
 
 
 def get_policies(cfg, rank):
@@ -75,20 +77,25 @@ def get_policies(cfg, rank):
                 f"bFloat16 support not present. Will use FP32, and not mixed precision"
             )
 
-    wrapping_policy = policies.get_llm_wrapper() #see policies for exact info
+    wrapping_policy = policies.get_specific_llm_wrapper() #see policies for exact info
 
     return mixed_precision_policy, wrapping_policy
 
 
 def fsdp_main(args):
 
-    # Load in Automodel and AutoTokenizer - see setup_model() function for specifics/more customization
-    model, tokenizer = setup_model(train_config.model_name) #this might be bad practice - look more into it
-
     # Pull environment vars --> use them to manage distributed training
     local_rank = int(os.environ['LOCAL_RANK']) # dictate which GPU to use
     rank = int(os.environ['RANK'])
     world_size = int(os.environ['WORLD_SIZE'])
+    if local_rank == 0:
+        cache_dir = os.path.join(os.environ.get("TMPDIR"), "martha_cache")
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+
+    # Load in Automodel and AutoTokenizer - see setup_model() function for specifics/more customization
+
+    model, tokenizer = setup_model(train_config.model_name) #this might be bad practice - look more into it
 
     # Load datasets from file paths in the config
     train_dataset = marthabot_clm_dataset(data_config.train_dataset_path)
@@ -127,7 +134,7 @@ def fsdp_main(args):
     # IMPORTANT: Sharding strategy - choose how to split model
         # Default: fully shard model parameters, gradients, optimizer states acros all ranks = Zero3 
         # _GRAD_OP = Zero2 = only optimizer states and gradients sharded --> this reduces communication overhead in FSDP. Saves an all_Gather during backwards pass
-    sharding_strategy: ShardingStrategy = ShardingStrategy.SHARD_GRAD_OP #for Zero2 and FULL_SHARD for Zero3
+    sharding_strategy: ShardingStrategy = ShardingStrategy.FULL_SHARD #for Zero2 and FULL_SHARD for Zero3
     torch.cuda.set_device(local_rank) #for this process, use local_rank as default CUDA device
 
 
@@ -139,9 +146,9 @@ def fsdp_main(args):
     bf16_ready = (
     torch.version.cuda
     and torch.cuda.is_bf16_supported()
-    and LooseVersion(torch.version.cuda) >= "11.0"
+    and parse(torch.version.cuda) >= parse("11.0")
     and dist.is_nccl_available()
-    and nccl.version() >= (2, 10)
+    and torch.cuda.nccl.version() >= (2, 10)
     )
 
     # Check if BF16 precision is supported, very fast mixed-precision format
@@ -151,19 +158,19 @@ def fsdp_main(args):
         mp_policy = None # defaults to fp32
 
     # Set up FSDP parameters
-    mixed_precision_policy, auto_wrapping_policy = get_policies(train_config, rank)
+    mp_policy, auto_wrapping_policy = get_policies(train_config, rank)
     
     # model is on CPU before input to FSDP
     # This wraps the model in FSDP (according to our policy), with mixed precision, and sets the right GPU id
     model = FSDP(model,
         auto_wrap_policy=auto_wrapping_policy,
         mixed_precision=mp_policy,
-        #sharding_strategy=sharding_strategy,
+        sharding_strategy=sharding_strategy,
         device_id=torch.cuda.current_device())
     # Set up optimizer 
-    optimizer = optim.AdamW(model.parameters(), lr=args.lr)
+    optimizer = optim.AdamW(model.parameters(), lr=train_config.lr)
     # StepLR decays learning rate each epoch by gamma
-    scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
     best_val_loss = float("inf")
     curr_val_loss = float("inf")
     # Can adjust the file save name to match the model
@@ -185,7 +192,7 @@ def fsdp_main(args):
     for epoch in range(1, args.epochs + 1):
         t0 = time.time()
         train_accuracy = train(args, model, rank, world_size, train_loader, optimizer, epoch, sampler=sampler1)
-        if args.run_validation: # checks validation accuracy if desired, adjusts learning rate accordingly
+        if train_config.run_validation: # checks validation accuracy if desired, adjusts learning rate accordingly
             curr_val_loss = validation(model, rank, world_size, val_loader)
         scheduler.step()
 
@@ -197,7 +204,7 @@ def fsdp_main(args):
             dur.append(time.time() - t0)
             train_acc_tracking.append(train_accuracy.item())
 
-            if args.run_validation:
+            if train_config.run_validation:
                 val_acc_tracking.append(curr_val_loss.item())
 
             if args.track_memory:
@@ -211,7 +218,7 @@ def fsdp_main(args):
             
         # Save only the best models
         # Save only the best models
-        if args.save_model and curr_val_loss < best_val_loss:
+        if train_config.save_model and curr_val_loss < best_val_loss:
 
             if rank == 0:
                 print(f"--> entering save model state")
@@ -267,5 +274,9 @@ if __name__ == '__main__':
 
     torch.manual_seed(args.seed)
 
-    
+    os.environ.get("TMPDIR")
+    tmp_dir = os.environ.get("TMPDIR")
+    cache_dir = os.path.join(tmp_dir, "martha_cache")
+
+    # Do we need to spawn anything here?
     fsdp_main(args)

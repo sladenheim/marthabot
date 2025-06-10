@@ -100,7 +100,7 @@ def preprocess_function(examples):
 #     weight_decay=0.01,
 #     per_device_train_batch_size=16,
 #     per_device_eval_batch_size=16,
-#     fp16=True
+#     fp16=True #Start off with this true 
 # )
 
 # trainer = Trainer(

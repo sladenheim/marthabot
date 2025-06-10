@@ -1,2 +1,9 @@
 .ipynb_checkpoints/
-__pycache__/
+__pycache__/code/notebooks/marthabot_models/
+model_downloads/
+code/language_model/
+code/notebooks/marthabot_models/
+code/notebooks/projectnb/
+code/scripts/__pycache__/
+code/scripts/data/
+code/scripts/fsdp/pytorchFSDPexample/data/

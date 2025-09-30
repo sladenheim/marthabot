@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime
+import os
 import torch
 import time
 
@@ -142,9 +143,9 @@ def save_model_checkpoint(
 
     if rank == 0:
         print(f"--> saving model ...")
-        # create save path
-        save_dir = Path.cwd() / cfg.checkpoint_folder
-        save_dir.mkdir(parents=True, exist_ok=True)
+        # create save path\
+        save_dir = os.environ.get("TMPDIR")
+        save_dir = os.path.join(save_dir, cfg.save_directory)
         save_name = cfg.model_save_name + "-" + str(epoch) + ".pt"
         save_full_path = str(save_dir) + "/" + save_name
 

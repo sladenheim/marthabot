@@ -17,6 +17,7 @@ class fsdp_config:
     save_optimizer: bool=False
     model_save_name: str="meta-llama/Llama-2-7b-hf"
     save_directory: str="martha_save"
+    verbose: bool=True
     
     
     

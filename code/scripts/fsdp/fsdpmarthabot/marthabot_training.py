@@ -278,5 +278,5 @@ if __name__ == '__main__':
     tmp_dir = os.environ.get("TMPDIR")
     cache_dir = os.path.join(tmp_dir, "martha_cache")
 
-    # Do we need to spawn anything here?
+    # Do we need to spawn anything here? Add as a test
     fsdp_main(args)

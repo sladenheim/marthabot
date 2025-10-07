@@ -7,13 +7,38 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, GPT2TokenizerFast 
 
 g_gigabyte = 1024**3
 
+# OLD SETUP 
+# def setup():
+#     # initialize the process group
+#     dist.init_process_group("nccl")
+
+# NEW SETUP - ensure each rank uses its own GPU in setup()
 def setup():
-    # initialize the process group
-    dist.init_process_group("nccl")
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    dist.init_process_group(backend="nccl")
 
-
+# OLD CLEANUP FUNCTION
 def cleanup():
     dist.destroy_process_group()
+
+# NEW/EDITED CLEANUP: 
+# def cleanup():
+#     # drain CUDA work on each rank
+#     try:
+#         if torch.cuda.is_available():
+#             torch.cuda.synchronize()
+#     except Exception as e:
+#         print(f"[cleanup] cuda sync warn: {e}")
+
+#     # line up all ranks, then destroy
+#     if dist.is_available() and dist.is_initialized():
+#         try:
+#             dist.barrier()
+#             dist.destroy_process_group()
+#         except Exception as e:
+#             print(f"[cleanup] destroy warn: {e}")
+
 
 def get_date_of_run():
     """create date and time for file save uniqueness

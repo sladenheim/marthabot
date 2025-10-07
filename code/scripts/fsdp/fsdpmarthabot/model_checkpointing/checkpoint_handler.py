@@ -143,18 +143,30 @@ def save_model_checkpoint(
 
     if rank == 0:
         print(f"--> saving model ...")
-        # create save path\
+        # # create save path\
+        # save_dir = os.environ.get("TMPDIR")
+        # save_dir = os.path.join(save_dir, cfg.save_directory)
+        # ## Add code that if save_dir doesn't exist, create it
+        # save_dir.mkdir(parents=True, exist_ok=True)
+        # save_name = cfg.model_save_name + "-" + str(epoch) + ".pt"
+        # save_full_path = str(save_dir) + "/" + save_name
+        
+        # create save path using TMPDIR (assumed to exist on SCC)
         save_dir = os.environ.get("TMPDIR")
         save_dir = os.path.join(save_dir, cfg.save_directory)
-        ## Add code that if save_dir doesn't exist, create it
-        save_name = cfg.model_save_name + "-" + str(epoch) + ".pt"
-        save_full_path = str(save_dir) + "/" + save_name
+
+        # save_dir is a str use os.makedirs, not Path.mkdir
+        os.makedirs(save_dir, exist_ok=True)
+
+        save_name = f"{cfg.model_save_name}-{epoch}.pt"
+        save_full_path = os.path.join(save_dir, save_name)
 
         # save model
         torch.save(cpu_state, save_full_path)
 
         if cfg.verbose:
             print(f"model checkpoint saved for epoch {epoch} at {save_full_path}\n")
+
 
 
 

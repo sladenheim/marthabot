@@ -168,7 +168,7 @@ def fsdp_main(args):
         sharding_strategy=sharding_strategy,
         device_id=torch.cuda.current_device())
     # Set up optimizer 
-    optimizer = optim.AdamW(model.parameters(), lr=train_config.lr)
+    optimizer = optim.SGD(model.parameters(), lr=train_config.lr)
     # StepLR decays learning rate each epoch by gamma
     scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
     best_val_loss = float("inf")

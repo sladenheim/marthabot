@@ -216,9 +216,8 @@ def fsdp_main(args):
                 )
             print(f"completed save and stats zone...")
             
-        # Save only the best models
-        # Save only the best models
-        if train_config.save_model and curr_val_loss < best_val_loss:
+        # Save only the last model
+        if train_config.save_model and epoch == args.epochs:
 
             if rank == 0:
                 print(f"--> entering save model state")
@@ -248,7 +247,7 @@ def fsdp_main(args):
             best_val_loss = curr_val_loss
             if rank==0:
                 print(f"-->>>> New Val Loss Record: {best_val_loss}")
-
+    # BEFORE ADDING HF EXPORT:
     dist.barrier()
     cleanup()
 
@@ -262,7 +261,7 @@ if __name__ == '__main__':
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=4, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=2, metavar='N',
+    parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 3)')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')

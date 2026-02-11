@@ -3,6 +3,8 @@ from typing import ClassVar
 from torch.distributed.fsdp import ShardingStrategy
 from torch.distributed.fsdp.fully_sharded_data_parallel import StateDictType
 # Contains important fsdp configuration settings. 
+
+import os 
 @dataclass
 class fsdp_config:
     mixed_precision: bool=True
@@ -13,6 +15,9 @@ class fsdp_config:
     sharding_strategy: ShardingStrategy = ShardingStrategy.FULL_SHARD #HYBRID_SHARD, SHARD_GRAD_OP
     checkpoint_type: StateDictType = StateDictType.FULL_STATE_DICT # alternatively can use SHARDED_STATE_DICT to avoid OOMs
     save_optimizer: bool=False
+    model_save_name: str="Llama-3.1-8B"
+    save_directory: str="martha_save"
+    verbose: bool=True
     
     
     

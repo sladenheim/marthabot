@@ -28,6 +28,8 @@ from torch.distributed.fsdp.fully_sharded_data_parallel import StateDictType
 import torch.distributed.checkpoint as dist_cp
 import torch.distributed as dist
 
+# NEW IMPORTS
+from transformers import AutoConfig, AutoModelForCausalLM
 
 def get_date_of_run():
     """create date and time for file save uniqueness
@@ -152,7 +154,8 @@ def save_model_checkpoint(
         # save_full_path = str(save_dir) + "/" + save_name
         
         # create save path using TMPDIR (assumed to exist on SCC)
-        save_dir = os.environ.get("TMPDIR")
+        # save_dir = os.environ.get("TMPDIR")
+        save_dir = "/projectnb/scottml/seansal2/trained_models"
         save_dir = os.path.join(save_dir, cfg.save_directory)
 
         # save_dir is a str use os.makedirs, not Path.mkdir
@@ -166,6 +169,8 @@ def save_model_checkpoint(
 
         if cfg.verbose:
             print(f"model checkpoint saved for epoch {epoch} at {save_full_path}\n")
+
+        # Save Hugging face export? 
 
 
 

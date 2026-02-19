@@ -135,6 +135,7 @@ def setup_model(model_name):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    # Should we add data collator here?
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         cache_dir=cache_dir,

@@ -168,7 +168,22 @@ def fsdp_main(args):
         sharding_strategy=sharding_strategy,
         device_id=torch.cuda.current_device())
     # Set up optimizer 
+<<<<<<< HEAD
     optimizer = optim.SGD(model.parameters(), lr=train_config.lr)
+=======
+    # optimizer = optim.AdamW(model.parameters(), lr=train_config.lr) # old optimizer
+
+    # Switch to SGD: 
+    # optimizer = optim.SGD(model.parameters(), lr=train_config.lr)
+
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        lr=train_config.lr,          # small for LLM stability
+        momentum=0.9,     
+        weight_decay=0.0  
+    )
+
+>>>>>>> e0bd4ee (Pushing old updated notebooks related to model training/evaluation from Fall 2025)
     # StepLR decays learning rate each epoch by gamma
     scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
     best_val_loss = float("inf")
@@ -261,7 +276,7 @@ if __name__ == '__main__':
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=4, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=10, metavar='N',
+    parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 3)')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')

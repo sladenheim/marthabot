@@ -11,7 +11,7 @@ class train_config:
     num_workers_dataloader: int=2
     lr: float=5e-6 # should probably decrease # default was 0.002
     weight_decay: float=0.1 # should probably actually use for L2 regularization! # default was 0.0
-    gamma: float= 0.85
+    gamma: float= 0.95
     use_fp16: bool=False
     mixed_precision: bool=True
     save_model: bool=True

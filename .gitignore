@@ -7,3 +7,7 @@ code/notebooks/projectnb/
 code/scripts/__pycache__/
 code/scripts/data/
 code/scripts/fsdp/pytorchFSDPexample/data/
+
+# HPC job outputs
+*.e
+*.o

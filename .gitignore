@@ -7,6 +7,14 @@ code/notebooks/projectnb/
 code/scripts/__pycache__/
 code/scripts/data/
 code/scripts/fsdp/pytorchFSDPexample/data/
+reports/*.aux
+reports/*.log
+reports/*.bbl
+reports/*.fdb_latexmk
+reports/*.synctex.gz
+reports/*.fls
+reports/*.pdf
+
 
 # HPC job outputs
 *.e

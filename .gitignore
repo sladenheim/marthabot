@@ -20,3 +20,5 @@ reports/*.blg
 # HPC job outputs
 *.e
 *.o
+
+.vscode
